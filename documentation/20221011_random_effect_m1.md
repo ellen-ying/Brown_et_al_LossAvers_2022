@@ -92,8 +92,8 @@ ggplot(aes(x = post_lambda_bar)) +
   theme_classic() +
   theme(legend.position = c(0.85, 0.9))
 
-#ggsave("figures/m1_post_lambda_bar.pdf", width = 8, height = 5)
-include_graphics(here("figures/m1_post_lambda_bar.pdf"))
+#ggsave("figures/m1_post_lambda_bar.png", width = 8, height = 5)
+include_graphics(here("figures/m1_post_lambda_bar.png"))
 ```
 
-![](../figures/m1_post_lambda_bar.pdf)<!-- -->
+![](../figures/m1_post_lambda_bar.png)<!-- -->
