@@ -7,7 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(rethinking);library(tidyverse);library(here);library(knitr)
+library(rethinking);library(tidyverse);library(here);library(knitr);library(glue)
 ```
 
 ```{r}
@@ -60,8 +60,8 @@ set.seed(4835)
 post_1.1 <- extract.samples(m1.1)
 
 # plot the posterior distribution of lambda_bar over the observed values of lambda
-plot_1.1_post <- data.frame(post_lambda_bar = as.vector(post_1.1$lambda_bar)) %>% 
-ggplot(aes(x = post_lambda_bar)) +
+plot_1.1_post <- data.frame(post_lambda_bar = as.vector(post_1.1$lambda_bar)) %>%
+  ggplot(aes(x = post_lambda_bar)) +
   # use geom_density with specific geom type to show lines in the legend
   # note the name of the color and linetype corresponds to the ones in the manual settings
   stat_density(size = 1.5, aes(color = "Estimated", linetype = "Estimated"),
@@ -92,3 +92,80 @@ ggplot(aes(x = post_lambda_bar)) +
 include_graphics(here("figures/m1_post_lambda_bar.png"))
 ```
 
+```{r, out.width="50%", out.height="50%"}
+post_1.1_lambda0 <- data.frame(lambda_0 = post_1.1$lambda_0)
+lambda0_stats <- 
+  post_1.1_lambda0 %>% 
+  summarize(
+    mean = mean(lambda_0),
+    PI_LL = PI(post_1.1$lambda_0, prob = 0.95)[1],
+    PI_UL = PI(post_1.1$lambda_0, prob = 0.95)[2]
+  )
+lambda0_mean <- glue("mean = {round(lambda0_stats$mean, 2)}")
+lambda0_PI <- glue("95% PI = [{round(lambda0_stats$PI_LL, 2)}, {round(lambda0_stats$PI_UL, 2)}]")
+
+plot_1.1_lambda0 <- 
+  post_1.1_lambda0 %>% 
+  ggplot(aes(x = lambda_0)) +
+  geom_density(fill = "darkred", color = NA, alpha = 0.5) +
+  # overlay mean
+  geom_point(data = lambda0_stats, aes(y = 0, x = mean), 
+             inherit.aes = FALSE, size = 5) +
+  # overlay 95% credibility interval
+  geom_segment(data = lambda0_stats, 
+               aes(x = PI_LL, xend = PI_UL, y = 0, yend = 0),
+               inherit.aes = FALSE, size = 3) +
+  geom_text(aes(x = 2.05, y = 9.5, label = lambda0_mean), 
+            hjust = 1, inherit.aes = FALSE) +
+  geom_text(aes(x = 2.05, y = 9, label = lambda0_PI), 
+            hjust = 1, inherit.aes = FALSE) +
+  labs(x = expression(paste("Overall mean (",lambda[0],")")),
+       y = "Density") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+#ggsave("figures/m1_post_lambda_0.png", width = 4, height = 5)
+include_graphics(here("figures/m1_post_lambda_0.png"))
+```
+
+```{r, out.width="50%", out.height="50%"}
+post_1.1_sigma <- data.frame(sigma = post_1.1$sigma)
+sigma_stats <- 
+  post_1.1_sigma %>% 
+  summarize(
+    mean = mean(sigma),
+    PI_LL = PI(post_1.1$sigma, prob = 0.95)[1],
+    PI_UL = PI(post_1.1$sigma, prob = 0.95)[2]
+  )
+sigma_mean <- glue("mean = {round(sigma_stats$mean, 2)}")
+sigma_PI <- glue("95% PI = [{round(sigma_stats$PI_LL, 2)}, {round(sigma_stats$PI_UL, 2)}]")
+
+plot_1.1_sigma <- 
+  post_1.1_sigma %>% 
+  ggplot(aes(x = sigma)) +
+  geom_density(fill = "darkred", color = NA, alpha = 0.5) +
+  # overlay mean
+  geom_point(data = sigma_stats, aes(y = 0, x = mean), 
+             inherit.aes = FALSE, size = 5) +
+  # overlay 95% credibility interval
+  geom_segment(data = sigma_stats, 
+               aes(x = PI_LL, xend = PI_UL, y = 0, yend = 0),
+               inherit.aes = FALSE, size = 3) +
+  geom_text(aes(x = 0.98, y = 13, label = sigma_mean), 
+            hjust = 1, inherit.aes = FALSE) +
+  geom_text(aes(x = 0.98, y = 12.5, label = sigma_PI), 
+            hjust = 1, inherit.aes = FALSE) +
+  labs(x = expression(paste("Heterogeneity (",sigma,")")),
+       y = "Density") +
+  theme_classic() +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
+
+#ggsave("figures/m1_post_sigma.png", width = 4, height = 5)
+include_graphics(here("figures/m1_post_sigma.png"))
+```
