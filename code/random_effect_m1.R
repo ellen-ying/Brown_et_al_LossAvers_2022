@@ -1,7 +1,12 @@
 library(rethinking)
 library(here)
-dat <- read.csv("data/raw/loss_aversion.csv")
-dat_clean <- data.frame(id = 1: nrow(dat), la = dat[,"la"], se = dat[, "se_imp"])
+
+# source file to use function to remove extra individual means
+source("code/remove_individual_mean.R")
+dat <- remove_individual_mean() 
+dat_clean <- list(id = 1: nrow(dat), 
+                  la = pull(dat, la), 
+                  se = pull(dat, se_imp))
 
 # my model
 m1.1 <- ulam(

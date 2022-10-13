@@ -10,9 +10,10 @@ knitr::opts_chunk$set(echo = TRUE)
 library(rethinking);library(tidyverse);library(here);library(knitr);library(glue)
 ```
 
-```{r}
-dat <- read.csv(here("data/raw/loss_aversion.csv"))
-dat_clean <- data.frame(la = dat[,"la"], se = dat[, "se_imp"])
+```{r, message=FALSE}
+source(here("code/remove_individual_mean.R"))
+dat <- remove_individual_mean() 
+dat_clean <- data.frame(la = pull(dat, la), se = pull(dat, se_imp))
 ```
 
 Now we have a dataset $(\lambda_i, se_i)^m_{i=1}$. In the first benchmark model, we model each $\lambda_i$ as a normal distribution with unknown mean $\overline{\lambda}_i$ and known variance $se_i^2$.
@@ -30,12 +31,13 @@ $$
 Now we would like to assign priors to the above model
 
 ```{r}
+par(mfrow = c(1, 1))
 set.seed(4238)
 N <- 50
 lambda_0 <- rlnorm(n = N)
 sigma <- rexp(1, n = N)
 lambda_bar <- rnorm(mean = lambda_0, sd = sigma, n = N)
-lambda_i <- rnorm(mean = lambda_bar, sd = dat_clean[,"se"], n = N)
+lambda_i <- rnorm(mean = lambda_bar, sd = dat_clean$se, n = N)
 
 plot(lambda_i, ylim = c(-5,10), xlab = NULL, ylab = expression(lambda[i]))
 abline(h = 0, lty = 2)
@@ -58,9 +60,11 @@ Let's inspect it
 m1.1 <- readRDS(here("data/processed/random_effect_m1.1.RData"))
 set.seed(4835)
 post_1.1 <- extract.samples(m1.1)
+post_lambda_bar <- apply(post_1.1$lambda_bar, 2, mean)
 
 # plot the posterior distribution of lambda_bar over the observed values of lambda
-plot_1.1_post <- data.frame(post_lambda_bar = as.vector(post_1.1$lambda_bar)) %>%
+plot_1.1_post <- 
+  data.frame(post_lambda_bar = post_lambda_bar) %>%
   ggplot(aes(x = post_lambda_bar)) +
   # use geom_density with specific geom type to show lines in the legend
   # note the name of the color and linetype corresponds to the ones in the manual settings
@@ -115,10 +119,11 @@ plot_1.1_lambda0 <-
   geom_segment(data = lambda0_stats, 
                aes(x = PI_LL, xend = PI_UL, y = 0, yend = 0),
                inherit.aes = FALSE, size = 3) +
-  geom_text(aes(x = 2.05, y = 9.5, label = lambda0_mean), 
+  geom_text(aes(x = 1.96, y = 10.5, label = lambda0_mean), 
             hjust = 1, inherit.aes = FALSE) +
-  geom_text(aes(x = 2.05, y = 9, label = lambda0_PI), 
+  geom_text(aes(x = 1.96, y = 10, label = lambda0_PI), 
             hjust = 1, inherit.aes = FALSE) +
+  #scale_x_continuous(limits = c(NA, 1.95)) +
   labs(x = expression(paste("Overall mean (",lambda[0],")")),
        y = "Density") +
   theme_classic() +
@@ -154,10 +159,11 @@ plot_1.1_sigma <-
   geom_segment(data = sigma_stats, 
                aes(x = PI_LL, xend = PI_UL, y = 0, yend = 0),
                inherit.aes = FALSE, size = 3) +
-  geom_text(aes(x = 0.98, y = 13, label = sigma_mean), 
+  geom_text(aes(x = 0.85, y = 13.2, label = sigma_mean), 
             hjust = 1, inherit.aes = FALSE) +
-  geom_text(aes(x = 0.98, y = 12.5, label = sigma_PI), 
+  geom_text(aes(x = 0.85, y = 12.5, label = sigma_PI), 
             hjust = 1, inherit.aes = FALSE) +
+  scale_x_continuous(breaks = c(0.7, 0.8), labels = c(0.7, 0.8)) +
   labs(x = expression(paste("Heterogeneity (",sigma,")")),
        y = "Density") +
   theme_classic() +
