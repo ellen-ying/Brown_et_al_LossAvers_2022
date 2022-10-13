@@ -1,15 +1,17 @@
 library(tidyverse)
 library(ggtext)
 
-dat_la_se <- 
-  here("data/raw/loss_aversion.csv") %>% 
-  read_csv() %>%
+# source file to use function to remove extra individual means
+source("code/remove_individual_mean.R")
+
+dat_clean <- 
+  remove_individual_mean() %>% 
   select(la, se)
 
 se_lab <- 
-  tibble(x = 5.5, y = 0.004, n = filter(dat_la_se, la <= 6, !is.na(se)) %>% nrow())
+  tibble(x = 5.5, y = 0.004, n = filter(dat_clean, !is.na(se)) %>% nrow())
 
-dat_la_se %>% 
+dat_clean %>% 
   filter(la <= 6, !is.na(se)) %>% 
   mutate(ul = 1 + 1.96*se, ll = 1 - 1.96*se) %>% 
   ggplot(aes(x = la, y = se)) +
