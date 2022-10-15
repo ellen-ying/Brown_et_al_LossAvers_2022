@@ -7,7 +7,7 @@ output: github_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-library(rethinking);library(tidyverse);library(here);library(knitr);library(glue)
+library(rethinking);library(tidyverse);library(ggtext);library(here);library(knitr);library(glue)
 ```
 
 ```{r, message=FALSE}
@@ -61,6 +61,18 @@ m1.1 <- readRDS(here("data/processed/random_effect_m1.1.RData"))
 set.seed(4835)
 post_1.1 <- extract.samples(m1.1)
 post_lambda_bar <- apply(post_1.1$lambda_bar, 2, mean)
+# posterior prediction
+# n_sample <- 2e3
+# n_obs <- nrow(dat_clean)
+# post_pred <- matrix(nrow = n_sample, ncol = n_obs)
+# for (i in 1:n_obs) {
+#   lambda_bar <- rnorm(n = n_sample,
+#                       mean = post_1.1$lambda_0, sd = post_1.1$sigma)
+#   # x[,i] <- lambda_bar
+#   se_sim <- sample(dat_clean$se, size = n_sample, replace = TRUE)
+#   post_pred[,i] <- rnorm(n = n_sample, 
+#                          mean = lambda_bar, sd = se_sim)
+# }
 
 # plot the posterior distribution of lambda_bar over the observed values of lambda
 plot_1.1_post <- 
@@ -74,6 +86,10 @@ plot_1.1_post <-
                aes(x = la, color = "Reported", linetype = "Reported"), 
                size = 1.5, geom = "line", 
                inherit.aes = FALSE, show.legend = TRUE) +
+  # stat_density(data = data.frame(post_lambda = apply(post_pred, 2, mean)),
+  #              aes(x = post_lambda, color = "Post", linetype = "Post"),
+  #              size = 2, geom = "line",
+  #              inherit.aes = FALSE, show.legend = TRUE) +
   geom_vline(xintercept = 1, linetype = 2) +
   scale_x_continuous(limits = c(0, 6), expand = c(0, 0),
                      breaks = seq(0, 6, by = 1), labels = seq(0, 6, by = 1)) +
@@ -82,10 +98,16 @@ plot_1.1_post <-
                      breaks = c("Estimated","Reported"),  
                      values = c("Estimated" = "steelblue", 
                                 "Reported" = "black"),
+                     labels = c(expression(paste("Estimated ", bar(lambda)[i]),
+                                           paste("Reported ", lambda[i])),
+                                "Posterior prediction"),
                      guide = guide_legend(keywidth = 3)) + 
   scale_linetype_manual(name = NULL, 
                      breaks = c("Estimated","Reported"),  
                      values = c("Estimated" = 1, "Reported" = 2),
+                     labels = c(expression(paste("Estimated ", bar(lambda)[i]),
+                                           paste("Reported ", lambda[i])),
+                                "Posterior prediction"),
                      guide = guide_legend(keywidth = 3)) +
   labs(x = expression(paste("Loss aversion coefficient (",lambda,")")),
        y = "Density") +
